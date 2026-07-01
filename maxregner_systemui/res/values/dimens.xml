@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- SystemUI Redesign -->
+    <dimen name="qs_tile_margin_top">4dp</dimen>
+    <dimen name="qs_tile_margin_bottom">4dp</dimen>
+    <dimen name="qs_tile_padding">16dp</dimen>
+    <dimen name="notification_side_paddings">12dp</dimen>
+    <dimen name="notification_corner_radius">40dp</dimen>
+</resources>

@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Extremely Rounded Corners -->
-    <dimen name="config_buttonCornerRadius">100dp</dimen>
-    <dimen name="config_progressBarCornerRadius">100dp</dimen>
-    <dimen name="config_dialogCornerRadius">48dp</dimen>
-    <dimen name="button_corner_radius_material">100dp</dimen>
-</resources>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Neon Pink Accents -->
-    <color name="accent_device_default_light">#FF10F0</color>
-    <color name="accent_device_default_dark">#FF10F0</color>
-    <color name="system_accent1_600">#FF10F0</color>
-    <color name="system_accent1_500">#FF10F0</color>
-    <color name="system_neutral1_900">#1A1A1A</color>
-</resources>

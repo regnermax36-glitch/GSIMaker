@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- MaxRegnerUI Extreme Radii -->
+    <dimen name="config_buttonCornerRadius">1000dp</dimen>
+    <dimen name="config_progressBarCornerRadius">1000dp</dimen>
+    <dimen name="config_dialogCornerRadius">60dp</dimen>
+    <dimen name="config_bottomDialogCornerRadius">60dp</dimen>
+    <dimen name="button_corner_radius_material">1000dp</dimen>
+
+    <!-- Custom Spacing -->
+    <dimen name="text_size_headline_material">32sp</dimen>
+    <dimen name="text_size_title_material">24sp</dimen>
+</resources>
