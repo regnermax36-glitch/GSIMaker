@@ -18,14 +18,14 @@ class AdvancedExtractor:
         os.makedirs(decomp_tmp, exist_ok=True)
 
         print(f"[{label}] Decompressing ZIP: {rom_zip}")
-        with zipfile.ZipFile(rom_zip, 'r') as zip_ref:
-            zip_ref.extractall(extract_tmp)
+        # Using subprocess unzip for speed
+        subprocess.run(["unzip", "-q", rom_zip, "-d", extract_tmp])
 
         payload = os.path.join(extract_tmp, "payload.bin")
         if os.path.exists(payload):
             print(f"[{label}] Extracting Payload.bin...")
             with open(payload, "rb") as f:
-                extract_partitions_from_payload(f, ['system', 'product', 'system_ext', 'vendor'], extract_tmp, 4)
+                extract_partitions_from_payload(f, ['system', 'product', 'system_ext', 'vendor'], extract_tmp, 8)
 
         for part in ['system', 'product', 'system_ext', 'vendor']:
             br_file = os.path.join(extract_tmp, f"{part}.new.dat.br")
@@ -51,21 +51,19 @@ class AdvancedExtractor:
                     unsparse_img = img_file + ".raw"
                     call(["simg2img", img_file, unsparse_img])
                     os.remove(img_file)
-                    os.rename(unsparse_img, img_file)
+                    shutil.move(unsparse_img, img_file)
                     file_type = gettype(img_file)
 
                 out_path = os.path.join(decomp_tmp, part)
-                os.makedirs(out_path, exist_ok=True)
-
                 if file_type == 'ext':
                     print(f"[{label}] Extracting EXT4 {part}.img...")
                     extractor = imgextractor.Extractor()
                     extractor.main(img_file, out_path, target_dir)
                 elif file_type == 'erofs':
                     print(f"[{label}] Extracting EROFS {part}.img...")
-                    # cgsi call uses tool_bin
                     call(["extract.erofs", "-i", img_file, "-o", decomp_tmp, "-x"], out_=False)
-                else:
-                    print(f"[{label}] Error: Unknown image type for {part}.img: {file_type}")
+
+                # Cleanup .img after extraction to save space/time if needed
+                os.remove(img_file)
 
         return decomp_tmp

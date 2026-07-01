@@ -1,17 +1,15 @@
 import os
-import shutil
 import re
 
 class FSMetadataManager:
-    def __init__(self, base_fs_config: str, ui_fs_config: str):
+    def __init__(self, base_fs_config, ui_fs_config):
         self.base_config = self._parse_config(base_fs_config)
         self.ui_config = self._parse_config(ui_fs_config)
         self.merged_config = {}
 
-    def _parse_config(self, path: str) -> dict:
+    def _parse_config(self, path):
         config = {}
-        if not path or not os.path.exists(path):
-            return config
+        if not path or not os.path.exists(path): return config
         with open(path, 'r') as f:
             for line in f:
                 parts = line.strip().split()
@@ -27,24 +25,22 @@ class FSMetadataManager:
             elif path in self.base_config:
                 self.merged_config[path] = self.base_config[path]
 
-    def save(self, output_path: str):
+    def save(self, output_path):
         with open(output_path, 'w') as f:
             for path in sorted(self.merged_config.keys()):
                 f.write(f"{path} {' '.join(self.merged_config[path])}\n")
 
 class InitPatcher:
-    def __init__(self, system_dir: str):
+    def __init__(self, system_dir):
         self.system_dir = system_dir
         self.init_dir = os.path.join(system_dir, "etc", "init")
 
-    def merge_service(self, source_rc: str):
+    def merge_service(self, source_rc):
         if not os.path.exists(source_rc): return
         with open(source_rc, 'r') as f:
             content = f.read()
-
         services = re.findall(r"(service\s+.*?\n(?:\s+.*?\n)*)", content)
         target_rc = os.path.join(self.init_dir, "maxregner_services.rc")
-
         os.makedirs(self.init_dir, exist_ok=True)
         with open(target_rc, 'a') as f:
             for svc in services:

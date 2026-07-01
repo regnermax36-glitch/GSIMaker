@@ -4,7 +4,7 @@
  |  \/  | /_\  \ \/ / _ \ __/ __| \| | __| _ \
  | |\/| |/ _ \  >  <|   / _|| (_ | .` | _||   /
  |_|  |_/_/ \_\/_/\_\_|_\___|\___|_|\_|___|_|_\
-                PRO ENGINE V2.0
+                PRO ENGINE V2.0 (Optimized)
 """
 import os
 import sys
@@ -15,7 +15,7 @@ from maxregner_engine.modules.compat_patcher import CompatPatcher
 from maxregner_engine.modules.branding import BrandingEngine
 from maxregner_engine.modules.extractor import AdvancedExtractor
 from maxregner_engine.modules.healer import BlobHealer
-from cgsi import repack_image, clean_up, IMG_DIR, decompose_images
+from cgsi import repack_image, clean_up, IMG_DIR
 
 class MaxRegnerPro:
     def __init__(self, base_rom: str, ui_rom: str):
@@ -46,23 +46,27 @@ class MaxRegnerPro:
         # 2. Extract and Decompose UI Source ROM
         ui_decomp_dir = extractor.extract_and_decompose(self.ui_rom, "UI_SOURCE")
 
-        # 3. Setup Working directory (IMG_DIR) for final assembly
+        # 3. Setup Working directory (IMG_DIR) using MOVE for speed
         self.logger.info("Setting up base partitions for modification...")
         if os.path.exists(IMG_DIR):
             shutil.rmtree(IMG_DIR)
-        shutil.copytree(base_decomp_dir, IMG_DIR, dirs_exist_ok=True)
+
+        # Move instead of copy to save time
+        os.makedirs(IMG_DIR)
+        for part in os.listdir(base_decomp_dir):
+            shutil.move(os.path.join(base_decomp_dir, part), os.path.join(IMG_DIR, part))
 
         # Determine system directory
         system_dir = os.path.join(IMG_DIR, "system", "system")
         if not os.path.exists(system_dir):
             system_dir = os.path.join(IMG_DIR, "system")
 
-        # 4. Merge UI components from UI source
+        # 4. Merge UI components from UI source (using decomposed paths)
         ui_system_src = os.path.join(ui_decomp_dir, "system", "system")
         if not os.path.exists(ui_system_src):
             ui_system_src = os.path.join(ui_decomp_dir, "system")
 
-        merger = MergeEngine(base_decomp_dir, ui_decomp_dir, system_dir)
+        merger = MergeEngine(None, ui_decomp_dir, system_dir) # base_dir not used in merge_system_components anymore
         merger.merge_system_components()
         merger.merge_product()
 
@@ -83,10 +87,12 @@ class MaxRegnerPro:
         self.logger.info("Repacking result_system.img...")
         os.environ["REPACK_FS"] = "ext"
 
-        # We need the config files from the base extraction for repack
+        # Move config files to IMG_DIR/config
         base_config = os.path.join(self.work_dir, "BASE", "config")
         if os.path.exists(base_config):
-            shutil.copytree(base_config, os.path.join(IMG_DIR, "config"), dirs_exist_ok=True)
+             if os.path.exists(os.path.join(IMG_DIR, "config")):
+                 shutil.rmtree(os.path.join(IMG_DIR, "config"))
+             shutil.move(base_config, os.path.join(IMG_DIR, "config"))
 
         if repack_image():
             return 1
@@ -98,7 +104,6 @@ class MaxRegnerPro:
         return 0
 
     def inject_overlays(self, system_dir):
-        # Product partition might be in IMG_DIR/product or inside system_dir/product depending on merge
         product_overlay = os.path.join(system_dir, "product", "overlay")
         if not os.path.exists(os.path.dirname(product_overlay)):
              product_overlay = os.path.join(IMG_DIR, "product", "overlay")

@@ -10,16 +10,11 @@ class MergeEngine:
         self.logger = logging.getLogger("MergeEngine")
 
     def merge_system_components(self):
-        """
-        Merge UI components from UI source into Base system.
-        Strategy: Keep Base /system/lib* (for kernel/vendor compat),
-        replace /system/priv-app, /system/app, /system/framework from UI.
-        """
         self.logger.info("Merging system components...")
 
         ui_system = os.path.join(self.ui_dir, "system", "system")
         if not os.path.exists(ui_system):
-            ui_system = os.path.join(self.ui_dir, "system") # fallback
+            ui_system = os.path.join(self.ui_dir, "system")
 
         components = ["app", "priv-app", "framework", "etc/sysconfig", "etc/permissions"]
 
@@ -30,13 +25,19 @@ class MergeEngine:
                 self.logger.info(f"  - Porting {comp}")
                 if os.path.exists(dst):
                     shutil.rmtree(dst)
-                shutil.copytree(src, dst, symlinks=True)
+                # Use move for UI source components if we don't need them anymore,
+                # but copy is safer if ui_img_dir is reused.
+                # Given we want speed, we use move.
+                shutil.move(src, dst)
 
     def merge_product(self):
         ui_product = os.path.join(self.ui_dir, "product")
-        out_product = os.path.join(self.out_dir, "..", "product") # assuming out_dir is system/system
+        out_product = os.path.join(self.out_dir, "product") # Corrected path
+        if not os.path.exists(os.path.dirname(out_product)):
+            out_product = os.path.join(os.path.dirname(self.out_dir), "product")
+
         if os.path.exists(ui_product):
             self.logger.info("Porting product partition...")
             if os.path.exists(out_product):
                 shutil.rmtree(out_product)
-            shutil.copytree(ui_product, out_product, symlinks=True)
+            shutil.move(ui_product, out_product)
