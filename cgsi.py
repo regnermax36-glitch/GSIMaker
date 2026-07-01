@@ -449,7 +449,12 @@ def repack_image() -> int:
     fspatch(systemdir, fs)
     contextpatch(systemdir, con)
     os.makedirs(f"{IMG_DIR}/out", exist_ok=True)
-    choice = input("Choose a FileSystem to Repack:[ext(default)/erofs]")
+    if os.environ.get("REPACK_FS") == "erofs":
+        choice = "erofs"
+    elif os.environ.get("REPACK_FS") == "ext":
+        choice = "ext"
+    else:
+        choice = input("Choose a FileSystem to Repack:[ext(default)/erofs]")
     if choice == "erofs":
         return call(["mkfs.erofs", "-zlz4hc,9", "--mount-point", f"/system", "--fs-config-file",
                      f"{IMG_DIR}/config/system_fs_config",

@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.maxregner.ui.systemui.overlay">
+    <overlay
+        android:targetPackage="com.android.systemui"
+        android:priority="1000"
+        android:isStatic="true" />
+</manifest>
