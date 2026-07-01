@@ -1,6 +1,7 @@
 import os
 import shutil
 import logging
+import subprocess
 
 class MergeEngine:
     def __init__(self, base_img_dir: str, ui_img_dir: str, output_system_dir: str):
@@ -23,21 +24,19 @@ class MergeEngine:
             dst = os.path.join(self.out_dir, comp)
             if os.path.exists(src):
                 self.logger.info(f"  - Porting {comp}")
+                # Fast delete using rm -rf
                 if os.path.exists(dst):
-                    shutil.rmtree(dst)
-                # Use move for UI source components if we don't need them anymore,
-                # but copy is safer if ui_img_dir is reused.
-                # Given we want speed, we use move.
+                    subprocess.run(["rm", "-rf", dst])
                 shutil.move(src, dst)
 
     def merge_product(self):
         ui_product = os.path.join(self.ui_dir, "product")
-        out_product = os.path.join(self.out_dir, "product") # Corrected path
+        out_product = os.path.join(self.out_dir, "product")
         if not os.path.exists(os.path.dirname(out_product)):
             out_product = os.path.join(os.path.dirname(self.out_dir), "product")
 
         if os.path.exists(ui_product):
             self.logger.info("Porting product partition...")
             if os.path.exists(out_product):
-                shutil.rmtree(out_product)
+                subprocess.run(["rm", "-rf", out_product])
             shutil.move(ui_product, out_product)
