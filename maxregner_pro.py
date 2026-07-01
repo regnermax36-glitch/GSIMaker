@@ -47,18 +47,21 @@ class MaxRegnerPro:
         ui_decomp_dir = extractor.extract_and_decompose(self.ui_rom, "UI_SOURCE")
 
         # 3. Setup Working directory (IMG_DIR) for final assembly
-        # Move decomposed base partitions to global IMG_DIR
         self.logger.info("Setting up base partitions for modification...")
+        if os.path.exists(IMG_DIR):
+            shutil.rmtree(IMG_DIR)
         shutil.copytree(base_decomp_dir, IMG_DIR, dirs_exist_ok=True)
 
-        # Determine system directory (system/system or system)
+        # Determine system directory
         system_dir = os.path.join(IMG_DIR, "system", "system")
         if not os.path.exists(system_dir):
             system_dir = os.path.join(IMG_DIR, "system")
 
-        # 4. Merge UI components from UI source (decomposed)
-        # ui_decomp_dir contains 'system', 'product', etc.
-        ui_system_src = os.path.join(ui_decomp_dir, "system")
+        # 4. Merge UI components from UI source
+        ui_system_src = os.path.join(ui_decomp_dir, "system", "system")
+        if not os.path.exists(ui_system_src):
+            ui_system_src = os.path.join(ui_decomp_dir, "system")
+
         merger = MergeEngine(base_decomp_dir, ui_decomp_dir, system_dir)
         merger.merge_system_components()
         merger.merge_product()
@@ -79,6 +82,7 @@ class MaxRegnerPro:
         # 7. Repack
         self.logger.info("Repacking result_system.img...")
         os.environ["REPACK_FS"] = "ext"
+
         # We need the config files from the base extraction for repack
         base_config = os.path.join(self.work_dir, "BASE", "config")
         if os.path.exists(base_config):
@@ -94,7 +98,11 @@ class MaxRegnerPro:
         return 0
 
     def inject_overlays(self, system_dir):
-        product_overlay = os.path.join(system_dir, "..", "product", "overlay")
+        # Product partition might be in IMG_DIR/product or inside system_dir/product depending on merge
+        product_overlay = os.path.join(system_dir, "product", "overlay")
+        if not os.path.exists(os.path.dirname(product_overlay)):
+             product_overlay = os.path.join(IMG_DIR, "product", "overlay")
+
         os.makedirs(product_overlay, exist_ok=True)
         for apk in ["MaxRegnerFrameworkOverlay.apk", "MaxRegnerSystemUIOverlay.apk", "MaxRegnerSettingsOverlay.apk"]:
             if os.path.exists(apk):

@@ -2,7 +2,7 @@ import os
 import shutil
 import subprocess
 import zipfile
-from cgsi import call, extract_partitions_from_payload, Sdat2img, gettype, imgextractor, IMG_DIR
+from cgsi import call, extract_partitions_from_payload, Sdat2img, gettype, imgextractor, IMG_DIR, tool_bin
 
 class AdvancedExtractor:
     def __init__(self, work_dir: str):
@@ -21,14 +21,12 @@ class AdvancedExtractor:
         with zipfile.ZipFile(rom_zip, 'r') as zip_ref:
             zip_ref.extractall(extract_tmp)
 
-        # Handle payload.bin
         payload = os.path.join(extract_tmp, "payload.bin")
         if os.path.exists(payload):
             print(f"[{label}] Extracting Payload.bin...")
             with open(payload, "rb") as f:
                 extract_partitions_from_payload(f, ['system', 'product', 'system_ext', 'vendor'], extract_tmp, 4)
 
-        # Process sparse/dat files
         for part in ['system', 'product', 'system_ext', 'vendor']:
             br_file = os.path.join(extract_tmp, f"{part}.new.dat.br")
             if os.path.exists(br_file):
@@ -44,12 +42,30 @@ class AdvancedExtractor:
             elif os.path.exists(os.path.join(extract_tmp, f"{part}.img")):
                 shutil.move(os.path.join(extract_tmp, f"{part}.img"), img_file)
 
-            # Now Decompose the image so we can access files
             if os.path.exists(img_file):
-                print(f"[{label}] Decomposing {part}.img...")
-                extractor = imgextractor.Extractor()
-                # Extractor.main(target, output_dir, work_dir)
-                # It writes config to work_dir/config
-                extractor.main(img_file, os.path.join(decomp_tmp, part), target_dir)
+                file_type = gettype(img_file)
+                print(f"[{label}] Detected {part}.img type: {file_type}")
+
+                if file_type == 'sparse':
+                    print(f"[{label}] Unsparsing {part}.img...")
+                    unsparse_img = img_file + ".raw"
+                    call(["simg2img", img_file, unsparse_img])
+                    os.remove(img_file)
+                    os.rename(unsparse_img, img_file)
+                    file_type = gettype(img_file)
+
+                out_path = os.path.join(decomp_tmp, part)
+                os.makedirs(out_path, exist_ok=True)
+
+                if file_type == 'ext':
+                    print(f"[{label}] Extracting EXT4 {part}.img...")
+                    extractor = imgextractor.Extractor()
+                    extractor.main(img_file, out_path, target_dir)
+                elif file_type == 'erofs':
+                    print(f"[{label}] Extracting EROFS {part}.img...")
+                    # cgsi call uses tool_bin
+                    call(["extract.erofs", "-i", img_file, "-o", decomp_tmp, "-x"], out_=False)
+                else:
+                    print(f"[{label}] Error: Unknown image type for {part}.img: {file_type}")
 
         return decomp_tmp
