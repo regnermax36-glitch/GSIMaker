@@ -1,0 +1,7 @@
+# MaxRegnerOS Core Performance Tweaks
+on property:sys.boot_completed=1
+    write /proc/sys/kernel/sched_boost 1
+    write /dev/cpuset/foreground/cpus 0-7
+
+# UI Interaction tweaks
+setprop persist.sys.maxregner.ui_boost 1
