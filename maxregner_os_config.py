@@ -1,43 +1,24 @@
-# MaxRegnerOS Definition File
-# Defines the boundaries of the "Purge and Build" logic.
-
-CORE_WHITELIST = [
-    "bin",
-    "lib",
-    "lib64",
-    "etc",
-    "framework",
-    "usr",
-    "fonts",
-    "media/audio/ui"
-]
-
-PURGE_LIST = [
-    "app",
-    "priv-app",
-    "system_ext",
-    "product/app",
-    "product/priv-app"
-]
-
-# MaxRegnerOS Proprietary Suite
-MAXREGNER_APPS = [
-    "MaxLauncher.apk",
-    "MaxSettings.apk",
-    "MaxSystemUI.apk"
-]
-
-MAXREGNER_OVERLAYS = [
-    "MaxRegnerFrameworkOverlay.apk",
-    "MaxRegnerSystemUIOverlay.apk",
-    "MaxRegnerSettingsOverlay.apk"
+# List of apps that can be safely removed without breaking the core system
+SAFE_TO_PURGE = [
+    "app/Browser",
+    "app/Calculator",
+    "app/Calendar",
+    "app/Camera2",
+    "app/DeskClock",
+    "app/Email",
+    "app/Gallery2",
+    "app/Music",
+    "app/Profiles",
+    "app/Recorder",
+    "priv-app/ExactCalculator",
+    "priv-app/LineageParts",
+    "priv-app/Updater"
 ]
 
 BUILD_PROPS = {
     "ro.product.brand": "MaxRegner",
-    "ro.product.model": "MaxRegnerOS Device",
-    "ro.build.display.id": "MaxRegnerOS-v1.0-GENESIS",
+    "ro.product.model": "MaxRegnerOS",
+    "ro.build.display.id": "MaxRegnerOS-GENESIS",
     "ro.maxregner.version": "1.0",
-    "ro.maxregner.ui": "MaxRegnerUI-v1",
     "ro.config.maxregner": "true"
 }

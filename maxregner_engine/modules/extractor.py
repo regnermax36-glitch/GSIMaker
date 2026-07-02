@@ -4,65 +4,50 @@ import subprocess
 import zipfile
 from cgsi import call, extract_partitions_from_payload, Sdat2img, gettype, imgextractor, IMG_DIR, tool_bin
 
-class AdvancedExtractor:
-    def __init__(self, work_dir: str):
+class FastExtractor:
+    def __init__(self, work_dir):
         self.work_dir = work_dir
 
-    def extract_and_decompose(self, rom_zip: str, label: str, selective=False):
-        target_dir = os.path.join(self.work_dir, label)
-        extract_tmp = os.path.join(target_dir, "EXTRACT")
-        img_tmp = os.path.join(target_dir, "IMG")
-        decomp_tmp = os.path.join(target_dir, "DECOMPOSED")
-        os.makedirs(extract_tmp, exist_ok=True)
+    def extract_and_decompose(self, rom_zip, label):
+        target = os.path.join(self.work_dir, label)
+        ext_tmp = os.path.join(target, "EXTRACT")
+        img_tmp = os.path.join(target, "IMG")
+        decomp = os.path.join(target, "DECOMP")
+        os.makedirs(ext_tmp, exist_ok=True)
         os.makedirs(img_tmp, exist_ok=True)
-        os.makedirs(decomp_tmp, exist_ok=True)
+        os.makedirs(decomp, exist_ok=True)
 
-        print(f"[{label}] Selective Decompressing ZIP...")
-        # 1. Faster: List zip content and only extract payload.bin or .new.dat files
-        with zipfile.ZipFile(rom_zip, 'r') as z:
-            names = z.namelist()
-            targets = [n for n in names if 'payload.bin' in n or '.new.dat' in n or '.transfer.list' in n or (n.endswith('.img') and any(p in n for p in ['system', 'product', 'vendor', 'system_ext']))]
-            for t in targets:
-                z.extract(t, extract_tmp)
+        print(f"[{label}] Fast Decompressing ZIP...")
+        subprocess.run(["unzip", "-q", rom_zip, "-d", ext_tmp])
 
-        parts = ['system', 'product', 'system_ext'] if selective else ['system', 'product', 'system_ext', 'vendor']
-
-        payload = os.path.join(extract_tmp, "payload.bin")
+        payload = os.path.join(ext_tmp, "payload.bin")
         if os.path.exists(payload):
-            print(f"[{label}] Selective Payload Extraction: {parts}")
             with open(payload, "rb") as f:
-                extract_partitions_from_payload(f, parts, extract_tmp, 8)
+                extract_partitions_from_payload(f, ['system', 'product'], ext_tmp, 16)
 
-        for part in parts:
-            br_file = os.path.join(extract_tmp, f"{part}.new.dat.br")
-            if os.path.exists(br_file):
-                call(["brotli", "-d", br_file])
-
-            dat_file = os.path.join(extract_tmp, f"{part}.new.dat")
-            list_file = os.path.join(extract_tmp, f"{part}.transfer.list")
+        for part in ['system', 'product']:
             img_file = os.path.join(img_tmp, f"{part}.img")
-
-            if os.path.exists(dat_file) and os.path.exists(list_file):
-                Sdat2img(list_file, dat_file, img_file)
-            elif os.path.exists(os.path.join(extract_tmp, f"{part}.img")):
-                shutil.move(os.path.join(extract_tmp, f"{part}.img"), img_file)
+            src_img = os.path.join(ext_tmp, f"{part}.img")
+            if os.path.exists(src_img):
+                shutil.move(src_img, img_file)
 
             if os.path.exists(img_file):
                 file_type = gettype(img_file)
                 if file_type == 'sparse':
-                    unsparse_img = img_file + ".raw"
-                    call(["simg2img", img_file, unsparse_img])
+                    call(["simg2img", img_file, img_file + ".raw"])
                     os.remove(img_file)
-                    shutil.move(unsparse_img, img_file)
+                    os.rename(img_file + ".raw", img_file)
                     file_type = gettype(img_file)
 
-                out_path = os.path.join(decomp_tmp, part)
+                out_path = os.path.join(decomp, part)
+                os.makedirs(out_path, exist_ok=True)
+
                 if file_type == 'ext':
+                    # Use imgextractor to preserve metadata
                     extractor = imgextractor.Extractor()
-                    extractor.main(img_file, out_path, target_dir)
+                    extractor.main(img_file, out_path, target)
                 elif file_type == 'erofs':
-                    call(["extract.erofs", "-i", img_file, "-o", decomp_tmp, "-x"], out_=False)
+                    call(["extract.erofs", "-i", img_file, "-o", decomp, "-x"], out_=False)
 
                 os.remove(img_file)
-
-        return decomp_tmp
+        return decomp

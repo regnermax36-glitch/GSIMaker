@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys
-import os
-from maxregner_os_builder import main
-
+from maxregner_os_builder import OSBuilder
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) < 2: sys.exit(1)
+    sys.exit(OSBuilder(sys.argv[1]).build())

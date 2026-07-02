@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- UI Tweaks -->
-    <bool name="config_useRoundIcon">true</bool>
-    <bool name="config_fillMainBuiltInDisplayCutout">true</bool>
-</resources>
